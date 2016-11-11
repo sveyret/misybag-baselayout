@@ -1,0 +1,6 @@
+root::0:root
+wheel::1:root
+sshd::22:sshd
+users::100:
+nogroup::65533:
+nobody::65534:

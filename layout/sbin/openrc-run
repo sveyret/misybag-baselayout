@@ -1,0 +1,90 @@
+#!/bin/sh
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+# This script is used to start or stop services using openrc-script. It acts as
+# if a simplistic openrc was installed.
+
+# Display a short help and exit
+_exiterror() {
+	echo "Syntax is ${_executedService} [start|stop|restart]"
+	exit 1
+}
+
+# Test if function named $1 exists
+_fnexists() {
+	LC_ALL="C" type "${1}" | grep -q 'function'
+}
+
+# Standard openrc display functions
+einfo() {
+	echo "[*] $@"
+}
+ewarn() {
+	echo "[*] $@"
+}
+eerror() {
+	echo "[*] $@" >&2
+}
+ebegin() {
+	echo -n "[*] $@ "
+}
+eend() {
+	if [[ "${1}" -eq "0" ]]; then
+		echo " [OK]"
+	else
+		shift
+		echo
+		eerror "$@ [!!]"
+	fi
+}
+ewend() {
+	if [[ "${1}" -eq "0" ]]; then
+		echo " [OK]"
+	else
+		shift
+		echo
+		ewarn "$@ [!!]"
+	fi
+}
+
+# Extract service name
+[[ -z "${1}" ]] && exit 1
+_executedService="$(readlink -f "${1}")"
+shift
+SVCNAME=$(basename "${_executedService}")
+[[ -r /etc/conf.d/"${SVCNAME}" ]] && source /etc/conf.d/"${SVCNAME}"
+source "${_executedService}"
+
+# Extract action
+[[ -z "${1}" ]] && _exiterror
+_calledAction="${1}"
+shift
+
+# Action defined in service file
+if _fnexists "${_calledAction}"; then
+	"${_calledAction}" "$@"
+
+# Default action
+else
+	case "${_calledAction}" in
+		start)
+			_allargs="$(echo "${start_stop_daemon_args}" | sed -e 's/--wait\s\+\S\+//')"
+			[[ -z "${pidfile}" ]] || _allargs="${_allargs} --pidfile ${pidfile}"
+			_allargs="${_allargs} -S"
+			start-stop-daemon ${_allargs} --exec ${command} -- ${command_args} || eerror "Service not started"
+		;;
+		stop)
+			_allargs=""
+			[[ -z "${pidfile}" ]] || _allargs="${_allargs} --pidfile ${pidfile}"
+			_allargs="${_allargs} -K"
+			start-stop-daemon ${_allargs} --exec ${command} -- ${command_args} || eerror "Service not stopped"
+		;;
+		restart)
+			"${_executedService}" stop && "${_executedService}" start
+		;;
+		*)
+			echo "Unknown action ${_calledAction}"
+			_exiterror
+		;;
+	esac
+fi

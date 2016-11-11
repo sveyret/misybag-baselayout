@@ -1,0 +1,45 @@
+#!/bin/sh
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+
+# DHCP communication
+
+source /lib/gentoo/service-functions
+
+case ${1} in
+	bound|renew)
+		commd="${interface} ${ip}"
+		if [[ ! -z "${broadcast}" ]]; then
+			commd="${commd} broadcast ${broadcast}"
+		fi
+		if [[ ! -z "${netmask}" ]]; then
+			commd="${commd} netmask ${netmask}"
+		fi
+		/sbin/ifconfig ${commd}
+		unset commd
+
+		if [[ ! -z "${router}" ]]; then
+			route del default gw 0.0.0.0 dev ${interface}
+			for r in ${router}; do
+				route add default gw ${r} dev ${interface}
+			done
+			unset r
+		fi
+
+		! isServiceStarted network && rm -f /etc/resolv.conf
+		if [[ ! -z "${domain}" ]]; then
+			echo "search ${domain}" >>/etc/resolv.conf
+		fi
+		for d in ${dns}; do
+			echo "nameserver ${d}" >>/etc/resolv.conf
+		done
+		unset d
+
+		# Terminate with dependent services
+		startAfterService network
+	;;
+
+	defconfig)
+		/sbin/ifconfig ${interface} 0.0.0.0
+	;;
+esac

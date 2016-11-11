@@ -1,0 +1,8 @@
+::sysinit:/etc/init.d/rcS
+::restart:/sbin/init
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+tty1::respawn:/sbin/getty 0 /dev/tty1
+tty2::respawn:/sbin/getty 0 /dev/tty2
+tty3::respawn:/sbin/getty 0 /dev/tty3
+tty4::respawn:/sbin/getty 0 /dev/tty4

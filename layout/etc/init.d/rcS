@@ -1,0 +1,21 @@
+#!/bin/sh
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+
+# Mount all that is needed and fstab content
+mount none /proc -t proc
+mount / -o remount,rw
+mount none /sys -t sysfs
+mkdir -p /dev/pts
+mount none /dev/pts -t devpts
+mount -a
+
+# Manage hostname and services
+[[ -r /etc/hostname ]] && hostname -F /etc/hostname
+rm -f /var/run/started
+for _serfile in /etc/runlevel/boot/*; do
+	if [[ -x "${_serfile}" ]]; then
+		"${_serfile}" start
+	fi
+done
+unset _serfile

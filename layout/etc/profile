@@ -1,0 +1,30 @@
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+# Login shell setup file
+
+# Global variables
+set -a
+PATH="/bin:/usr/bin:/usr/local/bin"
+for env in /etc/env.d/* ; do
+	[[ -r "$env" ]] && source "$env"
+done
+unset env
+set +a
+
+# File creation mask
+umask 022
+
+# Prompt
+PS1="\h \W"
+if [[ $(id -u) == 0 ]]; then
+	PS1="${PS1}# "
+	PATH="${PATH}:/sbin:/usr/sbin:/usr/local/sbin"
+else
+	PS1="\u@${PS1}\$ "
+fi
+
+# Specific profile files
+for sh in /etc/profile.d/*.sh ; do
+	[[ -r "$sh" ]] && source "$sh"
+done
+unset sh

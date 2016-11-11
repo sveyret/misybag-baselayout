@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+
+start() {
+	# Loopback
+	/sbin/ifconfig lo 127.0.0.1
+	/sbin/ifconfig lo add '::1/128'
+
+	# Interfaces
+	for iface in ${INTERFACES}; do
+		while ! /sbin/ifconfig -a | grep ${iface} >/dev/null; do
+			sleep 1
+		done
+		/sbin/ifplugd -i ${iface}
+	done
+	unset iface
+}
+
+stop() {
+	for iface in ${INTERFACES}; do
+		/sbin/ifplugd -k -i ${iface}
+		/etc/ifplugd.action ${iface} down
+	done
+	unset iface
+}
+

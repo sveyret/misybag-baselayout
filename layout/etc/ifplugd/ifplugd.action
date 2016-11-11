@@ -1,0 +1,11 @@
+#!/bin/sh
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+
+# Network port status change
+PID_FILE="/var/run/dhcp-${1}.pid"
+if [[ "${2}" = "up" ]] ; then
+	udhcpc -i ${1} -H $(hostname) -p ${PID_FILE} -s /etc/udhcpc/udhcpc.action
+elif [[ "${2}" = "down" ]] ; then
+	kill $(cat ${PID_FILE})
+fi

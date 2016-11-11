@@ -1,0 +1,33 @@
+# Copyright © 2016 Stéphane Veyret stephane_DOT_veyret_AT_neptura_DOT_org
+# Distributed under the terms of the GNU General Public License v3
+# File should be sourced by shell script needing these functions.
+
+# Indicate if the service is maked as started.
+# Parameters:
+# 1 The name of the service.
+isServiceStarted() {
+	[[ -f /var/run/started ]] && grep -q -e ":${1}:" /var/run/started
+}
+
+# Mark the service as started.
+# Parameters:
+# 1 The name of the service.
+markServiceStarted() {
+	isServiceStarted ${1} && return
+	[[ ! -f /var/run/started ]] && echo -n ':'>/var/run/started
+	echo -n "${1}:" >>/var/run/started
+}
+
+# Start all the service in the after folder of the given service.
+# Parameters:
+# 1 The name of the service.
+startAfterService() {
+	isServiceStarted ${1} && return
+	[[ -d /etc/runlevel/after/${1} ]] && for _serfile in /etc/runlevel/after/${1}/*; do
+		if [[ -x "${_serfile}" ]]; then
+			"${_serfile}" start
+		fi
+	done
+	unset _serfile
+	markServiceStarted ${1}
+}
